@@ -31,5 +31,7 @@
       packages.aarch64-linux =  packagesForSnapshot "" (import nixpkgs { system = "aarch64-linux"; overlays = [ haskell-nix.overlay ]; }).haskell-nix.snapshots."lts-18.8";
       packages.x86_64-darwin =  packagesForSnapshot "" (import nixpkgs { system = "x86_64-darwin"; overlays = [ haskell-nix.overlay ]; }).haskell-nix.snapshots."lts-18.8";
       packages.aarch64-darwin =  packagesForSnapshot "" (import nixpkgs { system = "aarch64-darwin"; overlays = [ haskell-nix.overlay ]; }).haskell-nix.snapshots."lts-18.8";
+
+      hydraJobs = self.packages;
   };
 }

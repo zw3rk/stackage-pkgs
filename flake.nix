@@ -43,6 +43,7 @@
          // packagesForSnapshot "js-ghcjs-" pkgs.pkgsCross.ghcjs.haskell-nix.snapshots."lts-18.8"
          // packagesForSnapshot "x86_64-musl-" pkgs.pkgsCross.musl64.haskell-nix.snapshots."lts-18.8"
          // packagesForSnapshot "aarch64-musl-" pkgs.pkgsCross.aarch64-multiplatform-musl.haskell-nix.snapshots."lts-18.8");
+    }) // {
       hydraJobs = self.packages;
-    });
+    };
 }

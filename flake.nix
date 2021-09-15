@@ -17,7 +17,13 @@
     ] (system:
     let
       overlays = [ haskell-nix.overlay ];
-      pkgs = import nixpkgs { inherit system overlays; };
+      pkgs = import nixpkgs {
+        inherit system overlays;
+        config = {
+          allowUnsupportedSystem = true;
+          wine.build = "wine64";
+        };
+      };
       packagesForSnapshot = prefix: snapshot:
         builtins.listToAttrs (
           nixpkgs.lib.concatMap (packageName:

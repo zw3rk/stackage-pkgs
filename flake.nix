@@ -19,10 +19,7 @@
       overlays = [ haskell-nix.overlay ];
       pkgs = import nixpkgs {
         inherit system overlays;
-        config = {
-          allowUnsupportedSystem = true;
-          wine.build = "wine64";
-        };
+        inherit (haskell-nix) config;
       };
       packagesForSnapshot = prefix: snapshot:
         builtins.listToAttrs (

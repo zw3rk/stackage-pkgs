@@ -21,31 +21,31 @@
         inherit system overlays;
         inherit (haskell-nix) config;
       };
-      packagesForSnapshot = prefix: snapshot:
-        builtins.listToAttrs (
-          nixpkgs.lib.concatMap (packageName:
-            let package = snapshot.${packageName};
-            in if !(package != null && (package ? components))
+      packagesForSnapshot = snapshot:
+        builtins.mapAttrs (packageName: package: pkgs.releaseTools.aggregate {
+          name = packageName;
+          meta.description = packageName;
+          constituents =
+            if !(package != null && (package ? components))
             then []
             else (nixpkgs.lib.optional (package.components ? library)
-                { name = "${prefix}${packageName}:lib:${packageName}"; value = package.components.library; }
-            ++ nixpkgs.lib.mapAttrsToList (n: v:
-                { name = "${prefix}${packageName}:lib:${n}"; value = v; })
+                package.components.library
+            ++ builtins.attrValues
               (package.components.sublibs)
-            ++ nixpkgs.lib.mapAttrsToList (n: v:
-                { name = "${prefix}${packageName}:exe:${n}"; value = v; })
+            ++ builtins.attrValues
               (package.components.exes)
-            ++ nixpkgs.lib.mapAttrsToList (n: v:
-                { name = "${prefix}${packageName}:test:${n}"; value = v; })
-              (package.components.tests))
-          ) (nixpkgs.lib.attrNames snapshot));
+            ++ builtins.attrValues
+              (package.components.tests));
+          }) snapshot;
     in {
-      packages = packagesForSnapshot "" pkgs.haskell-nix.snapshots."lts-18.8"
-        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
-            packagesForSnapshot "x86_64-mingw32-" pkgs.pkgsCross.mingwW64.haskell-nix.snapshots."lts-18.8"
-         // packagesForSnapshot "js-ghcjs-" pkgs.pkgsCross.ghcjs.haskell-nix.snapshots."lts-18.8"
-         // packagesForSnapshot "x86_64-musl-" pkgs.pkgsCross.musl64.haskell-nix.snapshots."lts-18.8"
-         // packagesForSnapshot "aarch64-musl-" pkgs.pkgsCross.aarch64-multiplatform-musl.haskell-nix.snapshots."lts-18.8");
+      packages = {
+        native = packagesForSnapshot pkgs.haskell-nix.snapshots."lts-18.8";
+      } // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+        x86_64-mingw32 = packagesForSnapshot pkgs.pkgsCross.mingwW64.haskell-nix.snapshots."lts-18.8";
+        js-ghcjs = packagesForSnapshot pkgs.pkgsCross.ghcjs.haskell-nix.snapshots."lts-18.8";
+        x86_64-musl = packagesForSnapshot pkgs.pkgsCross.musl64.haskell-nix.snapshots."lts-18.8";
+        aarch64-musl = packagesForSnapshot pkgs.pkgsCross.aarch64-multiplatform-musl.haskell-nix.snapshots."lts-18.8";
+      };
     }) // {
       hydraJobs = self.packages;
     };

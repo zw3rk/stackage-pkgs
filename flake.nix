@@ -26,32 +26,35 @@
         inherit system overlays;
         inherit (haskell-nix) config;
       };
-      packagesForSnapshot = snapshot:
-        builtins.mapAttrs (packageName: package: pkgs.releaseTools.aggregate {
-          name = packageName;
-          meta.description = packageName;
-          constituents =
-            if !(package != null && (package ? components))
-            then []
-            else (nixpkgs.lib.optional (package.components ? library)
-                package.components.library
-            ++ builtins.attrValues
-              (package.components.sublibs)
-            ++ builtins.attrValues
-              (package.components.exes)
-            ++ builtins.attrValues
-              (package.components.tests));
-          }) snapshot;
-    in {
-      packages = {
-        native = packagesForSnapshot pkgs.haskell-nix.snapshots."lts-18.8";
+      packagesFor = pkg:
+        let snapshot = pkgs.haskell-nix.snapshots."lts-18.10";
+        in pkgs.lib.mapAttrs (packageName: p:
+          let
+            package = pkgs.haskell-nix.hackage-package { name = packageName; version = p.identifier.version; compiler-nix-name = "ghc8107"; };
+          in pkgs.releaseTools.aggregate {
+            name = packageName;
+            meta.description = packageName;
+            constituents = pkgs.lib.optional (package != null) (
+              pkgs.lib.optional (package.components ? library)
+                  package.components.library
+              ++ builtins.attrValues
+                (package.components.sublibs or {})
+              ++ builtins.attrValues
+                (package.components.exes or {})
+              ++ builtins.attrValues
+                (package.components.tests or {}));
+           }) (pkgs.lib.filterAttrs (n: p: !(__elem n [ "buildPackages" "text" "ghcWithPackages" "shellFor" "makeConfigFiles" "ghcWithHoogle" "iserv-proxy" "remote-iserv" "iserv" "ghc" "base" "ghci" "libiserv" "rts" "ghc-heap" "ghc-prim" "ghc-boot" "hpc" "integer-gmp" "integer-simple" "deepseq" "array" "ghc-boot-th" "pretty" "template-haskell" "ghcjs-prim" "ghcjs-th" "cabal-install" ])) snapshot);
+    in rec {
+      packages = hydraJobs.native;
+      hydraJobs = {
+        native = packagesFor pkgs;
       } // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
-        x86_64-mingw32 = packagesForSnapshot pkgs.pkgsCross.mingwW64.haskell-nix.snapshots."lts-18.8";
-        js-ghcjs = packagesForSnapshot pkgs.pkgsCross.ghcjs.haskell-nix.snapshots."lts-18.8";
-        x86_64-musl = packagesForSnapshot pkgs.pkgsCross.musl64.haskell-nix.snapshots."lts-18.8";
-        aarch64-musl = packagesForSnapshot pkgs.pkgsCross.aarch64-multiplatform-musl.haskell-nix.snapshots."lts-18.8";
+        x86_64-mingw32 = packagesFor pkgs.pkgsCross.mingwW64;
+        js-ghcjs = packagesFor pkgs.pkgsCross.ghcjs;
+        x86_64-musl = packagesFor pkgs.pkgsCross.musl64;
+        aarch64-musl = packagesFor pkgs.pkgsCross.aarch64-multiplatform-musl;
       };
     }) // {
-      hydraJobs = self.packages;
+      # hydraJobs = self.packages;
     };
 }

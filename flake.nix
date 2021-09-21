@@ -20,7 +20,7 @@
       "aarch64-darwin"
     ] (system:
     let
-      ifdLevel = 0;
+      ifdLevel = 1;
       overlays = [ haskell-nix.overlay ];
       pkgs = import nixpkgs {
         inherit system overlays;

@@ -26,7 +26,7 @@
         inherit system overlays;
         inherit (haskell-nix) config;
       };
-      packagesFor = pkg:
+      packagesFor = pkgs:
         let snapshot = pkgs.haskell-nix.snapshots."lts-18.10";
             notPackages = [
 	      # Not packages (perhaps we should remove these form snapshots)

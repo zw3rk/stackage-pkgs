@@ -20,7 +20,7 @@
       "aarch64-darwin"
     ] (system:
     let
-      ifdLevel = 1;
+      ifdLevel = 0;
       overlays = [ haskell-nix.overlay ];
       pkgs = import nixpkgs {
         inherit system overlays;
@@ -100,9 +100,7 @@
                   ++ builtins.attrValues
                     (package.components.tests or {});
               };
-          in {
-            stackage = aggregatePackageOutputs pStackage;
-          } // pkgs.lib.optionalAttrs (!__elem packageName ghcPackages) ({
+          in pkgs.lib.optionalAttrs (!__elem packageName ghcPackages) ({
             plans =
               pkgs.releaseTools.aggregate {
                 name = packageName + "-plans";
@@ -110,6 +108,7 @@
                 constituents = [hackageProject.plan-nix hackageProjectLatest.plan-nix];
               };
           } // pkgs.lib.optionalAttrs (ifdLevel > 0) {
+            stackage = aggregatePackageOutputs pStackage;
             hackage = aggregatePackageOutputs (hackageProject.getPackage packageName);
             hackageLatest = aggregatePackageOutputs (hackageProjectLatest.getPackage packageName);
           })) (builtins.removeAttrs snapshot notPackages);

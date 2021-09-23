@@ -65,13 +65,14 @@
 	    cabalProjectWithStackageConstraints = ''
               packages: .
               allow-newer: binary-parsers:criterion
-	      constraints:
+              constraints:
                 ${pkgs.lib.concatStringsSep ", " (pkgs.lib.mapAttrsToList (n: p: "${n} ==${p.identifier.version}")  (builtins.removeAttrs snapshot (notPackages ++ ghcPackages)))}
             '';
 	    # cabal configure sometimes fails if the tests depend on the package being tested
             # See https://github.com/haskell/cabal/issues/1575
 	    skipTestsForHackage = [
               "attoparsec"
+              "colour"
             ];
         in pkgs.lib.mapAttrs (packageName: pStackage:
           let
@@ -80,7 +81,33 @@
               compiler-nix-name = "ghc8107";
             } // pkgs.lib.optionalAttrs (__elem packageName skipTestsForHackage) {
               configureArgs = "--disable-benchmarks --disable-tests";
-            } // args);
+            } // args // {
+              cabalProject =
+                # https://github.com/emilypi/Base16/issues/9
+                if packageName == "base16" then ''
+                  packages: .
+                  constraints: base16-bytestring <1.0
+                ''
+                else if __elem packageName ["cryptohash-md5" "cryptohash-sha1" "cryptohash-sha256" "cryptohash-sha512"] then ''
+                  packages: .
+                  constraints: base16-bytestring <1.0
+                  allow-newer: cryptohash-md5:*, cryptohash-sha1:*, cryptohash-sha256:*, cryptohash-sha512:*
+                  package cryptohash-sha256
+                    benchmarks: false
+                ''
+                else args.cabalProject or ''
+                    packages: .
+                  '' + pkgs.lib.optionalString (packageName == "HsYAML") ''
+                    allow-newer: HsYAML:tasty, HsYAML:QuickCheck
+                  '' + pkgs.lib.optionalString (packageName == "asif") ''
+                    allow-newer: asif:doctest
+                  '' + pkgs.lib.optionalString (packageName == "buffer-builder") ''
+                    allow-newer: json-builder:base
+                  '' + pkgs.lib.optionalString (packageName == "binary-instances") ''
+                    allow-newer: binary-instances:tasty
+                  '' + pkgs.lib.optionalString (packageName == "cryptohash-sha1") ''
+                  '';
+            });
             hackageProject = pHackage {
               version = pStackage.identifier.version;
               cabalProject = cabalProjectWithStackageConstraints;

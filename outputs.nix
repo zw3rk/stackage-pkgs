@@ -1,4 +1,4 @@
-selectFunction:
+{ selectFunction, libsOnly ? false }:
 { self, haskell-nix, nixpkgs, flake-utils }:
 flake-utils.lib.eachSystem [
   "x86_64-linux"
@@ -106,12 +106,14 @@ let
             constituents =
               pkgs.lib.optional (package.components ? library)
                 (package.components.library)
-              ++ builtins.attrValues
-                (package.components.sublibs or {})
-              ++ builtins.attrValues
-                (package.components.exes or {})
-              ++ builtins.attrValues
-                (package.components.tests or {});
+              ++ pkgs.lib.optionals (!libsOnly) (
+                builtins.attrValues
+                  (package.components.sublibs or {})
+                ++ builtins.attrValues
+                  (package.components.exes or {})
+                ++ builtins.attrValues
+                  (package.components.tests or {})
+              );
           };
       in selectFunction (pkgs.lib.optionalAttrs (!__elem packageName ghcPackages) ({
         plans =

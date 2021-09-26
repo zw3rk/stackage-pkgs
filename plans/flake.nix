@@ -12,6 +12,5 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  # outputs = { self, haskell-nix, nixpkgs, flake-utils }:
-  outputs = args: import ../outputs.nix (p: { inherit (p) plans; }) args;
+  outputs = args: import ../outputs.nix { selectFunction = (p: { inherit (p) plans; }); } args;
 }

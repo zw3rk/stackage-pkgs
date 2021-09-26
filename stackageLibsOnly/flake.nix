@@ -12,5 +12,5 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = args: import ../outputs.nix { selectFunction = (p: { inherit (p) hackage; }); } args;
+  outputs = args: import ../outputs.nix { selectFunction = (p: { inherit (p) stackage; }); libsOnly = true; } args;
 }
